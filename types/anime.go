@@ -1,5 +1,20 @@
 package types
 
+type AnimeType int
+
+const (
+	TV AnimeType = iota
+	MOVIE
+	OVA
+	SPECIAL
+	ONA
+	// MUSIC   = "music"
+)
+
+func (t AnimeType) String() string {
+	return [...]string{"tv", "movie", "ova", "special", "ona"}[t]
+}
+
 type Anime struct {
 	ID            int32        `json:"mal_id"`
 	URL           string       `json:"url"`
@@ -7,12 +22,14 @@ type Anime struct {
 	TrailerURL    string       `json:"trailer_url"`
 	Title         string       `json:"title"`
 	TitleEnglish  string       `json:"title_english"`
+	TitleSynonyms []string     `json:"title_synonyms"`
 	TitleJapanese string       `json:"title_japanese"`
 	Type          string       `json:"type"`
 	Source        string       `json:"source"`
 	Status        string       `json:"status"`
-	Episodes      int8         `json:"episodes"`
+	Episodes      int16        `json:"episodes"`
 	Airing        bool         `json:"airing"`
+	AiringStart   string       `json:"airing_start"`
 	Duration      string       `json:"duration"`
 	Rating        string       `json:"rating"`
 	Score         float32      `json:"score"`
@@ -35,32 +52,12 @@ type Anime struct {
 	R18           bool         `json:"r18"`
 	Kids          bool         `json:"kids"`
 	Continuing    bool         `json:"continuing"`
-
-	// TitleSyn string `json:"title"`
 }
 
 type AnimeRelated struct {
 	Adaptation []Reference `json:"Adaptation"`
 	SideStory  []Reference `json:"Side story"`
 	Summary    []Reference `json:"Summary"`
-}
-
-type Reference struct {
-	ID       int32  `json:"mal_id"`
-	Type     string `json:"type"`
-	Name     string `json:"name"`
-	URL      string `json:"url"`
-	ImageURL string `json:"image_url"`
-	Role     string `json:"role"`
-}
-
-type Picture struct {
-	Large string `json:"large"`
-	Small string `json:"small"`
-}
-
-type PictureResponse struct {
-	Pictures []Picture `json:"pictures"`
 }
 
 type Video struct {
@@ -86,4 +83,24 @@ type Episode struct {
 type VideoResponse struct {
 	Promo    []Video   `json:"promo"`
 	Episodes []Episode `json:"episodes"`
+}
+
+type AnimeGenreResponse struct {
+	MalURL    Reference `json:"mal_url"`
+	ItemCount int32     `json:"item_count"`
+	Animes    []Anime   `json:"anime"`
+}
+
+type AnimeProducerResponse struct {
+	Meta   Reference `json:"meta"`
+	Animes []Anime   `json:"anime"`
+}
+
+type TopAnimeResponse struct {
+	Top []Anime `json:"top"`
+}
+
+type AnimeSearchResultResponse struct {
+	Results  []Anime `json:"results"`
+	LastPage int32   `json:"last_page"`
 }
