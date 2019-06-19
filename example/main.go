@@ -10,11 +10,7 @@ import (
 
 func main() {
 	fmt.Print()
-	api, err := gojikan.NewJikan()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	api := gojikan.NewJikan()
 	resp, err := api.SearchAnime("Fairy Tail")
 	if err != nil {
 		log.Fatal(err)

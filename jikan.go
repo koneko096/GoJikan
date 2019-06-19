@@ -3,8 +3,6 @@ package gojikan
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -13,61 +11,35 @@ import (
 )
 
 type Jikan struct {
-	BaseUrl string `json:"baseUrl"`
-	Debug   bool   `json:"debug"`
-
-	client *http.Client
+	baseUrl      string
+	clientHelper ClientHelper
 }
 
-func NewJikan() (*Jikan, error) {
+func NewJikan() *Jikan {
 	return NewJikanWithBaseUrl(BASE_URL)
 }
 
-func NewJikanWithBaseUrl(baseUrl string) (*Jikan, error) {
+func NewJikanWithBaseUrl(baseUrl string) *Jikan {
 	return NewJikanWithBaseUrlAndClient(baseUrl, &http.Client{})
 }
 
-func NewJikanWithBaseUrlAndClient(baseUrl string, client *http.Client) (*Jikan, error) {
-	api := &Jikan{
-		BaseUrl: baseUrl,
-		client:  client,
-		Debug:   false,
+func NewJikanWithBaseUrlAndClient(baseUrl string, client HttpClient) *Jikan {
+	return &Jikan{
+		baseUrl:      baseUrl,
+		clientHelper: NewClientHelper(client),
 	}
-
-	return api, nil
 }
 
-// MakeRequest makes a request to a specific endpoint.
-func (api *Jikan) makeRequest(path string, params url.Values) ([]byte, error) {
-	endpoint := api.BaseUrl + path
+func (api *Jikan) get(path string) ([]byte, error) {
+	return api.getWithParam(path, url.Values{})
+}
 
-	req, err := http.NewRequest("GET", endpoint, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	req.Header.Add("Accept", "application/json")
-	req.URL.RawQuery = params.Encode()
-	resp, err := api.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if api.Debug {
-		log.Printf("%s resp: %s", req.URL.String(), bytes)
-	}
-
-	return bytes, nil
+func (api *Jikan) getWithParam(path string, params url.Values) ([]byte, error) {
+	return api.clientHelper.Get(BASE_URL+path, params)
 }
 
 func (api *Jikan) GetAnime(id int) (types.Anime, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_ANIME_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_ANIME_ENDPOINT, id))
 	if err != nil {
 		return types.Anime{}, err
 	}
@@ -81,7 +53,7 @@ func (api *Jikan) GetAnime(id int) (types.Anime, error) {
 }
 
 func (api *Jikan) GetAnimePictures(id int) (types.PictureResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_ANIME_PICTURES_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_ANIME_PICTURES_ENDPOINT, id))
 	if err != nil {
 		return types.PictureResponse{}, err
 	}
@@ -95,7 +67,7 @@ func (api *Jikan) GetAnimePictures(id int) (types.PictureResponse, error) {
 }
 
 func (api *Jikan) GetAnimeVideos(id int) (types.VideoResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_ANIME_VIDEOS_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_ANIME_VIDEOS_ENDPOINT, id))
 	if err != nil {
 		return types.VideoResponse{}, err
 	}
@@ -109,7 +81,7 @@ func (api *Jikan) GetAnimeVideos(id int) (types.VideoResponse, error) {
 }
 
 func (api *Jikan) GetAnimeCharactersAndStaffs(id int) (types.CharactersAndStaffsResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_ANIME_CHARACTERS_STAFFS_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_ANIME_CHARACTERS_STAFFS_ENDPOINT, id))
 	if err != nil {
 		return types.CharactersAndStaffsResponse{}, err
 	}
@@ -123,7 +95,7 @@ func (api *Jikan) GetAnimeCharactersAndStaffs(id int) (types.CharactersAndStaffs
 }
 
 func (api *Jikan) GetCharacter(id int) (types.Character, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_CHARACTER_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_CHARACTER_ENDPOINT, id))
 	if err != nil {
 		return types.Character{}, err
 	}
@@ -137,7 +109,7 @@ func (api *Jikan) GetCharacter(id int) (types.Character, error) {
 }
 
 func (api *Jikan) GetSeasonList(year int, season string) (types.SeasonListResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_SEASON_LIST_ENDPOINT, year, season), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_SEASON_LIST_ENDPOINT, year, season))
 	if err != nil {
 		return types.SeasonListResponse{}, err
 	}
@@ -155,7 +127,7 @@ func (api *Jikan) GetAnimeFromGenre(genreId types.GenreId) (types.AnimeGenreResp
 }
 
 func (api *Jikan) GetAnimeFromGenreWithPage(genreId types.GenreId, page int) (types.AnimeGenreResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_ANIME_FROM_GENRE_ENDPOINT, genreId, page), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_ANIME_FROM_GENRE_ENDPOINT, genreId, page))
 	if err != nil {
 		return types.AnimeGenreResponse{}, err
 	}
@@ -173,7 +145,7 @@ func (api *Jikan) GetAnimeFromProducer(producerId int) (types.AnimeProducerRespo
 }
 
 func (api *Jikan) GetAnimeFromProducerWithPage(producerId int, page int) (types.AnimeProducerResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_ANIME_FROM_PRODUCER_ENDPOINT, producerId, page), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_ANIME_FROM_PRODUCER_ENDPOINT, producerId, page))
 	if err != nil {
 		return types.AnimeProducerResponse{}, err
 	}
@@ -187,7 +159,7 @@ func (api *Jikan) GetAnimeFromProducerWithPage(producerId int, page int) (types.
 }
 
 func (api *Jikan) GetManga(id int) (types.Manga, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_MANGA_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_MANGA_ENDPOINT, id))
 	if err != nil {
 		return types.Manga{}, err
 	}
@@ -201,7 +173,7 @@ func (api *Jikan) GetManga(id int) (types.Manga, error) {
 }
 
 func (api *Jikan) GetMangaPictures(id int) (types.PictureResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_MANGA_PICTURES_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_MANGA_PICTURES_ENDPOINT, id))
 	if err != nil {
 		return types.PictureResponse{}, err
 	}
@@ -215,7 +187,7 @@ func (api *Jikan) GetMangaPictures(id int) (types.PictureResponse, error) {
 }
 
 func (api *Jikan) GetMangaCharactersAndStaffs(id int) (types.CharactersAndStaffsResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_MANGA_CHARACTERS_ENDPOINT, id), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_MANGA_CHARACTERS_ENDPOINT, id))
 	if err != nil {
 		return types.CharactersAndStaffsResponse{}, err
 	}
@@ -233,7 +205,7 @@ func (api *Jikan) GetMangaFromGenre(genreId types.GenreId) (types.MangaGenreResp
 }
 
 func (api *Jikan) GetMangaFromGenreWithPage(genreId types.GenreId, page int) (types.MangaGenreResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_MANGA_FROM_GENRE_ENDPOINT, genreId, page), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_MANGA_FROM_GENRE_ENDPOINT, genreId, page))
 	if err != nil {
 		return types.MangaGenreResponse{}, err
 	}
@@ -251,7 +223,7 @@ func (api *Jikan) GetMangaFromMagazine(magazineId int) (types.MangaMagazineRespo
 }
 
 func (api *Jikan) GetMangaFromMagazineWithPage(magazineId int, page int) (types.MangaMagazineResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_MANGA_FROM_MAGAZINE_ENDPOINT, magazineId, page), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_MANGA_FROM_MAGAZINE_ENDPOINT, magazineId, page))
 	if err != nil {
 		return types.MangaMagazineResponse{}, err
 	}
@@ -269,7 +241,7 @@ func (api *Jikan) GetTopAnime() (types.TopAnimeResponse, error) {
 }
 
 func (api *Jikan) GetTopAnimeWithPage(page int) (types.TopAnimeResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_TOP_ANIME_ENDPOINT, page), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_TOP_ANIME_ENDPOINT, page))
 	if err != nil {
 		return types.TopAnimeResponse{}, err
 	}
@@ -287,7 +259,7 @@ func (api *Jikan) GetTopManga() (types.TopMangaResponse, error) {
 }
 
 func (api *Jikan) GetTopMangaWithPage(page int) (types.TopMangaResponse, error) {
-	bytes, err := api.makeRequest(fmt.Sprintf(GET_TOP_MANGA_ENDPOINT, page), url.Values{})
+	bytes, err := api.get(fmt.Sprintf(GET_TOP_MANGA_ENDPOINT, page))
 	if err != nil {
 		return types.TopMangaResponse{}, err
 	}
@@ -306,7 +278,7 @@ func (api *Jikan) GetSchedule() (types.ScheduleResponse, error) {
 
 func (api *Jikan) GetScheduleOfDay(day string) (types.ScheduleResponse, error) {
 	path := GET_SCHEDULE_ENDPOINT + day
-	bytes, err := api.makeRequest(path, url.Values{})
+	bytes, err := api.get(path)
 	if err != nil {
 		return types.ScheduleResponse{}, err
 	}
@@ -325,7 +297,7 @@ func (api *Jikan) SearchAnime(key string) (types.AnimeSearchResultResponse, erro
 	q.Add("page", strconv.Itoa(1))
 	q.Add("limit", strconv.Itoa(10))
 
-	bytes, err := api.makeRequest(SEARCH_ANIME_ENDPOINT, q)
+	bytes, err := api.getWithParam(SEARCH_ANIME_ENDPOINT, q)
 	if err != nil {
 		return types.AnimeSearchResultResponse{}, err
 	}
@@ -344,7 +316,7 @@ func (api *Jikan) SearchManga(key string) (types.MangaSearchResultResponse, erro
 	q.Add("page", strconv.Itoa(1))
 	q.Add("limit", strconv.Itoa(10))
 
-	bytes, err := api.makeRequest(SEARCH_MANGA_ENDPOINT, q)
+	bytes, err := api.getWithParam(SEARCH_MANGA_ENDPOINT, q)
 	if err != nil {
 		return types.MangaSearchResultResponse{}, err
 	}
