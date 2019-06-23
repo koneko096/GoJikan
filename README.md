@@ -20,7 +20,10 @@ import "github.com/koneko096/gojikan"
 
 func main() {
   client := gojikan.NewJikan()
-  anime := client.GetAnime(123)
-  ...
+  anime, _ := client.GetAnime(123)
+  // ...
 }
 ```
+
+## License
+GPLv3

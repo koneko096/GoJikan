@@ -16,16 +16,12 @@ type Jikan struct {
 }
 
 func NewJikan() *Jikan {
-	return NewJikanWithBaseUrl(BASE_URL)
+	return NewJikanWithClient(&http.Client{})
 }
 
-func NewJikanWithBaseUrl(baseUrl string) *Jikan {
-	return NewJikanWithBaseUrlAndClient(baseUrl, &http.Client{})
-}
-
-func NewJikanWithBaseUrlAndClient(baseUrl string, client HttpClient) *Jikan {
+func NewJikanWithClient(client HttpClient) *Jikan {
 	return &Jikan{
-		baseUrl:      baseUrl,
+		baseUrl:      BASE_URL,
 		clientHelper: NewClientHelper(client),
 	}
 }
